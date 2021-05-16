@@ -1,0 +1,318 @@
+LIST  P=16F877a, W=-302
+  #include <p16f877a.inc>
+  __CONFIG 0x3D72 ; XT MODE,WDT OFF, BOREN
+  
+BANK_0  EQU  0x00
+BANK_1  EQU  0x80
+BANK_2  EQU  0x100
+BANK_3  EQU  0x180
+DCounter1  EQU  0x20
+DCounter2 EQU  0x22
+DCounter3  EQU  0x24
+DCounter4   EQU 0X26
+DCounter5   EQU 0x28
+DCounter6   EQU 0x2a                         
+DCounter7   EQU  0x2c
+DCounter8   EQU  0x2e
+DCounter9   EQU  0x30                         
+DCounter10   EQU  0x32
+DCounter11   EQU  0x34
+DCounter12   EQU  0x36              
+DCounter13   EQU  0x38                         
+DCounter14   EQU  0x3a    
+DCounter15 EQU 0x3c                     
+            
+ 
+ ORG  0x00
+
+            
+ MOVLW B'00000001'
+ BANKSEL BANK_1
+ MOVWF TRISB
+ MOVLW B’00000000
+ MOVWF TRISA
+ MOVWF TRISC
+ MOVLW B’00001000
+ MOVWF TRISD
+
+ BANKSEL BANK_0  
+ MOVLW B’10010000
+ MOVWF INTCON
+ORG 0X04
+     	GOTO ISR
+
+
+ 
+Start     
+	CALL DELAY300MS
+    	BTFSS PORTD, RD3
+	GOTO Start
+Stepper
+
+MOVLW B'00001100'
+MOVWF PORTC
+CALL DELAYSTEP
+MOVLW B'00000110'
+MOVWF PORTC
+CALL DELAYSTEP
+MOVLW B'00000011'
+MOVWF PORTC
+CALL DELAYSTEP
+MOVLW B'00001001'
+MOVWF PORTC
+CALL DELAYSTEP
+GOTO Stepper
+            
+ISR
+Isrstart
+BSF PORTD, 7		; triggers the solenoid
+BSF PORTD, 4		;triggers the pump
+CALL DELAY1S
+CALL DELAY1S
+CALL DELAY1S
+CALL DELAY1S
+CALL DELAY1S
+BCF PORTD, 4		; Stops the solenoid
+CALL DELAY300MS
+BCF PORTD, 7		; Stops the pump
+CALL Isrstep
+CALL Servoall
+CALL Isrstep
+BSF PORTD, 6		; triggers the solenoid
+BSF PORTD, 5		; Runs dc motor
+CALL DELAY1S
+CALL DELAY1S
+BCF PORTD, 5		;Stops solenoid
+CALL DELAY300MS
+BCF PORTD, 6		;Stops dc motor
+CALL DELAY300MS
+RETFIE
+
+
+
+
+Servoall 
+MOVLW   B'00000100'         ;Servo3 pulls back
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            CALL       DELAY100US                         
+            CALL       DELAY100US
+            CALL       DELAY10US
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+MOVLW   B'00000010'    ; Servo2    lifts up 
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            CALL       DELAY100US
+            CALL       DELAY100US
+            CALL       DELAY10US
+            CALL       DELAY10US 
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+            CALL       DELAY10US
+
+MOVLW   B'00000001'   ; Servo1    rotates left 
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+            CALL        DELAY10US
+            CALL       DELAY1S
+MOVLW   B'00001000'       ; Servo4  opens gripper
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            CALL       DELAY100US
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+            CALL       DELAY10US
+
+MOVLW   B'00000100'  ; Servo3       pushes forward
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            CALL       DELAY500US                         
+            CALL       DELAY100US
+            CALL       DELAY10US
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+            CALL       DELAY300MS
+MOVLW   B'00001000'   ; Servo4      closes gripper
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            CALL       DELAY500US
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+            CALL       DELAY10US
+            CALL       DELAY300MS
+MOVLW   B'00000100'  ;       Servo3 pulls back
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            CALL       DELAY100US                         
+            CALL       DELAY100US
+            CALL       DELAY10US
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+
+MOVLW   B'00000001' ; Servo1         rotates right
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            CALL       DELAY500US 
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+            CALL        DELAY10US
+            CALL       DELAY300MS
+MOVLW   B'00000100'      ; Servo3   pushes forward
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            CALL       DELAY500US                         
+            CALL       DELAY100US
+            CALL       DELAY10US
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+            CALL       DELAY300MS
+MOVLW   B'00000010'         ; Servo2 lifts down
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            CALL       DELAY100US
+            CALL       DELAY100US
+            CALL       DELAY100US
+            CALL       DELAY100US
+            CALL       DELAY10US
+            CALL       DELAY10US 
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+            CALL       DELAY10US
+MOVLW   B'00001000'       ; Servo4  opens gripper
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            CALL       DELAY100US
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+            CALL       DELAY10US
+MOVLW   B'00000100'  ;       Servo3 pulls back
+            MOVWF   PORTA     
+            CALL       DELAY1000US 
+            CALL       DELAY100US                         
+            CALL       DELAY100US
+            CALL       DELAY10US
+            MOVLW    B'00000000'                          
+            MOVWF   PORTA  
+	CALL       DELAY300MS
+	RETURN
+Isrstep
+MOVLW 0X4b
+MOVWF DCounter15
+Isrstep1
+MOVLW B'00001100'; Stepper moves the band for 3.1 cm
+MOVWF PORTC
+CALL DELAYSTEP
+MOVLW B'00000110'
+MOVWF PORTC
+CALL DELAYSTEP
+MOVLW B'00000011'
+MOVWF PORTC
+CALL DELAYSTEP
+MOVLW B'00001001'
+MOVWF PORTC
+CALL DELAYSTEP
+DECFSZ DCounter15
+GOTO Isrstep1
+CALL DELAY300MS
+RETURN
+RETURN
+
+
+
+
+
+DELAY100US
+MOVLW 0X83
+MOVWF DCounter1
+LOOP
+DECFSZ DCounter1, 1
+GOTO LOOP
+NOP
+NOP
+RETURN
+
+DELAY10US
+MOVLW 0X83
+MOVWF DCounter2
+LOOP
+DECFSZ DCounter2, 1
+GOTO LOOP
+NOP
+NOP
+RETURN
+
+DELAY500US
+MOVLW 0X96
+MOVWF DCounter3
+MOVLW 0X03
+MOVWF DCounter4
+LOOP
+DECFSZ DCounter3, 1
+GOTO LOOP
+DECFSZ DCounter4, 1
+GOTO LOOP
+NOP
+RETURN
+
+
+DELAY1000US
+MOVLW 0X2f
+MOVWF DCounter5
+MOVLW 0X06
+MOVWF DCounter6
+LOOP
+DECFSZ DCounter5, 1
+GOTO LOOP
+DECFSZ DCounter6, 1
+GOTO LOOP
+RETURN
+ 
+DELAY300MS
+MOVLW 0X69
+MOVWF DCounter7
+MOVLW 0X17
+MOVWF DCounter8
+MOVLW 0X07
+MOVWF DCounter9
+LOOP
+DECFSZ DCounter7, 1
+GOTO LOOP
+DECFSZ DCounter8, 1
+GOTO LOOP
+DECFSZ DCounter9, 1
+GOTO LOOP
+RETURN
+
+DELAY1S
+MOVLW 0Xbd
+MOVWF DCounter10
+MOVLW 0X4b
+MOVWF DCounter11
+MOVLW 0X15
+MOVWF DCounter12
+LOOP
+DECFSZ DCounter10, 1
+GOTO LOOP
+DECFSZ DCounter11, 1
+GOTO LOOP
+DECFSZ DCounter12, 1
+GOTO LOOP
+RETURN
+
+DELAYSTEP
+MOVLW 0Xe9
+MOVWF DCounter13
+MOVLW 0X4e
+MOVWF DCounter14
+LOOP
+DECFSZ DCounter1, 1
+GOTO LOOP
+DECFSZ DCounter2, 1
+GOTO LOOP
+NOP
+NOP
+RETURN
+END
